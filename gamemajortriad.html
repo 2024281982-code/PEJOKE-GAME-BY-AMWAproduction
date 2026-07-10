@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chord Archer: Triad Master 🏹🎵</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f0c1b 0%, #201a30 50%, #2f2544 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        /* STAGE UTAMA GAME */
+        #gameArea {
+            width: 100%;
+            max-width: 450px;
+            height: 600px;
+            background: rgba(25, 18, 43, 0.85);
+            border: 4px solid #ff007f;
+            border-radius: 24px;
+            box-shadow: 0 0 30px rgba(255, 0, 127, 0.4), inset 0 0 15px rgba(255, 0, 127, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* INFOBAR (SKOR, LEVEL, SOALAN) */
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            font-family: 'Orbitron', sans-serif;
+            border-bottom: 2px solid rgba(255, 0, 127, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .stat-box {
+            font-size: 0.9rem;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+        }
+
+        /* PAPARAN SOALAN UTAMA */
+        .question-box {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+        }
+        .question-box p {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #bfa3ff;
+        }
+        .chord-target-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 10px #ff007f, 0 0 20px #ff007f;
+            margin-top: 5px;
+        }
+
+        /* KAWASAN SASARAN BERGERAK (TARGETS) */
+        #targetContainer {
+            position: absolute;
+            top: 160px;
+            width: 100%;
+            height: 100px;
+        }
+        .target {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, #fff 20%, #ff0055 21%, #ff0055 40%, #fff 41%, #fff 60%, #ff0055 61%);
+            border-radius: 50%;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #000;
+            text-shadow: 0 1px 2px white;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        /* BUSUR & ANAK PANAH */
+        #bowContainer {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        #bow {
+            font-size: 3rem;
+            transform: rotate(-45deg);
+            transition: transform 0.1s;
+        }
+        #arrow {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            display: none;
+            z-index: 5;
+        }
+
+        /* OVERLAY SKRIN (MULA & GAME OVER) */
+        .overlay-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 12, 27, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 30px;
+            text-align: center;
+        }
+        .overlay-screen h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            color: #ff007f;
+            text-shadow: 0 0 15px #ff007f;
+            margin-bottom: 10px;
+        }
+        .overlay-screen p {
+            color: #bfa3ff;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .btn {
+            background: linear-gradient(45deg, #ff007f, #7928ca);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 0, 127, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 0, 127, 0.6);
+        }
+
+        /* BUTANG TEMBAK BESAR UNTUK PHONE */
+        #shootPad {
+            position: absolute;
+            bottom: 15px;
+            width: 80%;
+            left: 10%;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="gameArea">
+        <!-- BAR STATUS -->
+        <div class="info-bar">
+            <div class="stat-box" id="levelDisp">LEVEL: 1</div>
+            <div class="stat-box" id="scoreDisp">SKOR: 0</div>
+        </div>
+
+        <!-- SOALAN KORD -->
+        <div class="question-box">
+            <p>Sasar Tiga Not Triad Bagi Kord:</p>
+            <div class="chord-target-name" id="chordQuestion">C Major</div>
+        </div>
+
+        <!-- SASARAN BERGERAK -->
+        <div id="targetContainer">
+            <div id="targetA" class="target" style="left: 30px;" onclick="tembakSasaran('A')">C - E - G</div>
+            <div id="targetB" class="target" style="left: 250px;" onclick="tembakSasaran('B')">A - C - E</div>
+        </div>
+
+        <!-- ELEMEN MEMANAH -->
+        <div id="arrow">⬆️</div>
+        <div id="bowContainer">
+            <div id="bow">🏹</div>
+        </div>
+
+        <!-- BUTANG KAWALAN DI PHONE -->
+        <div id="shootPad">
+            <button class="btn" style="width: 100%; padding: 10px;" onclick="lepaskanPanah()">LEPASKAN PANAH! 🏹</button>
+        </div>
+
+        <!-- SKRIN MULA -->
+        <div id="startScreen" class="overlay-screen">
+            <h1>CHORD ARCHER</h1>
+            <p>Uji kemahiran teori muzik anda! Tembak sasaran triad (Major / Minor) yang betul untuk hasilkan harmoni kord yang syahdu.</p>
+            <button class="btn" onclick="mulaGame()">START GAME 🏹</button>
+        </div>
+
+        <!-- SKRIN GAME OVER / TAMAT -->
+        <div id="gameOverScreen" class="overlay-screen" style="display: none;">
+            <h1 id="endTitle">GAME OVER</h1>
+            <p>Hebat! Anda telah menyelesaikan cabaran triad teori muzik.</p>
+            <div style="font-family:'Orbitron'; font-size:1.5rem; color:#00ffff; margin-bottom:20px;">SKOR AKHIR: <span id="finalScore">0</span></div>
+            <button class="btn" onclick="mulaGame()">MAIN LAGI 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // DATA KORD DAN TRIAD (SOALAN GAME)
+        const senaraiKord = [
+            { nama: "C Major", betul: "C - E - G", salah: "C - Eb - G", frekuensi: [261.63, 329.63, 392.00] },
+            { nama: "A Minor", betul: "A - C - E", salah: "A - C# - E", frekuensi: [220.00, 261.63, 329.63] },
+            { nama: "G Major", betul: "G - B - D", salah: "G - Bb - D", frekuensi: [196.00, 246.94, 293.66] },
+            { nama: "E Minor", betul: "E - G - B", salah: "E - G# - B", frekuensi: [164.81, 196.00, 246.94] },
+            { nama: "F Major", betul: "F - A - C", salah: "F - Ab - C", frekuensi: [174.61, 220.00, 261.63] },
+            { nama: "D Minor", betul: "D - F - A", salah: "D - F# - A", frekuensi: [293.66, 349.23, 440.00] }
+        ];
+
+        let audioCtx = null;
+        let score = 0;
+        let level = 1;
+        let kordSekarang = {};
+        let gameActive = false;
+        let pusinganTargetInterval;
+        
+        // Logik Pergerakan Sasaran
+        let posA = 30, posB = 250;
+        let arahA = 1, arahB = -1;
+        let speed = 2; // Kelajuan asal sasaran
+
+        const tA = document.getElementById('targetA');
+        const tB = document.getElementById('targetB');
+        const arrow = document.getElementById('arrow');
+
+        // PANGGIL AUDIO ENGINE (WEB AUDIO API)
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // FUNGSI BUNYI KORD HARMONI (APABILA JAWAPAN BETUL)
+        function mainkanKordMuzik(frekuensiArray) {
+            initAudio();
+            const masaSekarang = audioCtx.currentTime;
+            
+            // Mainkan 3 nota triad serentak untuk bunyi harmoni
+            frekuensiArray.forEach(freq => {
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                osc.type = 'triangle'; // Bunyi lembut berciri vibe retro
+                osc.frequency.setValueAtTime(freq, masaSekarang);
+                
+                gainNode.gain.setValueAtTime(0.2, masaSekarang);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, masaSekarang + 1.2); // Bunyi fade out
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.start(masaSekarang);
+                osc.stop(masaSekarang + 1.2);
+            });
+        }
+
+        // FUNGSI BUNYI SALAH (BUZZ)
+        function mainkanBunyiSalah() {
+            initAudio();
+            const masaSekarang = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(110, masaSekarang); // Frekuensi rendah (bass buzz)
+            gainNode.gain.setValueAtTime(0.3, masaSekarang);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, masaSekarang + 0.4);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start(masaSekarang);
+            osc.stop(masaSekarang + 0.4);
+        }
+
+        function mulaGame() {
+            initAudio();
+            score = 0;
+            level = 1;
+            speed = 2.5;
+            gameActive = true;
+            
+            document.getElementById('scoreDisp').innerText = "SKOR: " + score;
+            document.getElementById('levelDisp').innerText = "LEVEL: " + level;
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+
+            pilihSoalanBaru();
+            
+            clearInterval(pusinganTargetInterval);
+            pusinganTargetInterval = setInterval(gerakkanSasaran, 20);
+        }
+
+        function pilihSoalanBaru() {
+            // Pilih satu kord rawak dari senarai data
+            const randomIdx = Math.floor(Math.random() * senaraiKord.length);
+            kordSekarang = senaraiKord[randomIdx];
+            
+            document.getElementById('chordQuestion').innerText = kordSekarang.nama;
+
+            // Agihkan jawapan betul/salah ke Target A dan Target B secara rawak
+            if (Math.random() > 0.5) {
+                tA.innerText = kordSekarang.betul;
+                tA.dataset.status = "betul";
+                tB.innerText = kordSekarang.salah;
+                tB.dataset.status = "salah";
+            } else {
+                tA.innerText = kordSekarang.salah;
+                tA.dataset.status = "salah";
+                tB.innerText = kordSekarang.betul;
+                tB.dataset.status = "betul";
+            }
+        }
+
+        // ANIMASI GERAKAN SASARAN KIRI/KANAN
+        function gerakkanSasaran() {
+            if (!gameActive) return;
+
+            // Gerakkan Target A
+            posA += speed * arahA;
+            if (posA > 340 || posA < 10) arahA *= -1; // Pantul semula jika cecah dinding stage
+            tA.style.left = posA + 'px';
+
+            // Gerakkan Target B
+            posB += speed * arahB;
+            if (posB > 340 || posB < 10) arahB *= -1;
+            tB.style.left = posB + 'px';
+        }
+
+        // ANIMASI PANAH TERBANG KE ATAS
+        function lepaskanPanah() {
+            if (!gameActive) return;
+            
+            arrow.style.bottom = "80px";
+            arrow.style.display = "block";
+            
+            let arrowPos = 80;
+            let arrowInterval = setInterval(() => {
+                arrowPos += 18; // Kelajuan anak panah meluncur naik
+                arrow.style.bottom = arrowPos + 'px';
+
+                // Semak perlanggaran apabila anak panah sampai kawasan ketinggian target (ketinggian sekitar 350px dari bawah)
+                if (arrowPos >= 350 && arrowPos <= 410) {
+                    clearInterval(arrowInterval);
+                    arrow.style.display = "none";
+                    
+                    // Semak kedudukan X panah kena sasaran mana satu (Panah berada tepat di tengah, X = 215px)
+                    if (215 >= posA && 215 <= (posA + 90)) {
+                        semakJawapan(tA.dataset.status);
+                    } else if (215 >= posB && 215 <= (posB + 90)) {
+                        semakJawapan(tB.dataset.status);
+                    } else {
+                        // Terlepas dua-dua sasaran (Missed)
+                        mainkanBunyiSalah();
+                    }
+                }
+
+                // Jika anak panah terkeluar dari sempadan atas skrin
+                if (arrowPos > 600) {
+                    clearInterval(arrowInterval);
+                    arrow.style.display = "none";
+                }
+            }, 15);
+        }
+
+        // Atau boleh juga klik terus pada sasaran (Mesra Mobile)
+        function tembakSasaran(pilihan) {
+            if (!gameActive) return;
+            const status = (pilihan === 'A') ? tA.dataset.status : tB.dataset.status;
+            semakJawapan(status);
+        }
+
+        function semakJawapan(status) {
+            if (status === "betul") {
+                score += 10;
+                document.getElementById('scoreDisp').innerText = "SKOR: " + score;
+                mainkanKordMuzik(kordSekarang.frekuensi); // Bunyi kord harmoni yang sedap keluar!
+                
+                // Mekanisme Naik Level
+                if (score >= 30 && level === 1) {
+                    level = 2;
+                    speed = 4.5; // Sasaran makin laju
+                    document.getElementById('levelDisp').innerText = "LEVEL: " + level;
+                    alert("KEMASUKAN LEVEL 2! Sasaran bergerak lebih laju! ⚡️");
+                } else if (score >= 60 && level === 2) {
+                    level = 3;
+                    speed = 6.5; // Sangat laju!
+                    document.getElementById('levelDisp').innerText = "LEVEL: " + level;
+                    alert("KEMASUKAN LEVEL FINAL (LEVEL 3)! Fokus penuh! 🔥");
+                } else if (score >= 100) {
+                    tamatGame(true); // Menang game sepenuhnya!
+                    return;
+                }
+
+                pilihSoalanBaru();
+            } else {
+                mainkanBunyiSalah();
+                tamatGame(false); // Terlanggar jawapan salah, Game Over
+            }
+        }
+
+        function tamatGame(adakahMenang) {
+            gameActive = false;
+            clearInterval(pusinganTargetInterval);
+            
+            document.getElementById('finalScore').innerText = score;
+            const title = document.getElementById('endTitle');
+            
+            if (adakahMenang) {
+                title.innerText = "TRIAD MASTER! 👑";
+                title.style.color = "#00ffff";
+                title.style.textShadow = "0 0 15px #00ffff";
+            } else {
+                title.innerText = "GAME OVER 😢";
+                title.style.color = "#ff007f";
+                title.style.textShadow = "0 0 15px #ff007f";
+            }
+            
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
